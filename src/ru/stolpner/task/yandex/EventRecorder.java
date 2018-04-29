@@ -62,42 +62,38 @@ public class EventRecorder {
      * @return number of events
      */
     public int getNumberOfLastMinuteEvents() {
-        //TODO rewind 60 indexes back from current time index
-        //TODO synchronize on all counting indexes or not?
-        synchronized (records) {
-            int counter = 0;
-            long currentTimeSeconds = getCurrentTimeInSeconds();
-            long currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
-            if (currentSecondIndex - SECONDS_IN_MINUTE >= 0) {
-                for (int i = (int) currentSecondIndex; i > currentSecondIndex - SECONDS_IN_MINUTE; i--) {
-                    synchronized (records[i]) {
-                        if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
-                            counter += records[i].getCount();
-                        }
+        int counter = 0;
+        long currentTimeSeconds = getCurrentTimeInSeconds();
+        long currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
+        if (currentSecondIndex - SECONDS_IN_MINUTE >= 0) {
+            for (int i = (int) currentSecondIndex; i > currentSecondIndex - SECONDS_IN_MINUTE; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
+                        counter += records[i].getCount();
                     }
                 }
-            } else {
-                long indexesToRewindFromEndOfArray = SECONDS_IN_MINUTE - currentSecondIndex;
+            }
+        } else {
+            long indexesToRewindFromEndOfArray = SECONDS_IN_MINUTE - currentSecondIndex;
 
-                for (int i = (int) currentSecondIndex; i >= 0; i--) {
-                    synchronized (records[i]) {
-                        if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
-                            counter += records[i].getCount();
-                        }
-                    }
-                }
-
-                for (int i = records.length - 1; i > records.length - 1 - indexesToRewindFromEndOfArray; i--) {
-                    synchronized (records[i]) {
-                        if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
-                            counter += records[i].getCount();
-                        }
+            for (int i = (int) currentSecondIndex; i >= 0; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
+                        counter += records[i].getCount();
                     }
                 }
             }
 
-            return counter;
+            for (int i = records.length - 1; i > records.length - 1 - indexesToRewindFromEndOfArray; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
+                        counter += records[i].getCount();
+                    }
+                }
+            }
         }
+
+        return counter;
     }
 
     //TODO refactor and comment
@@ -107,43 +103,38 @@ public class EventRecorder {
      * @return number of events
      */
     public int getNumberOfLastHourEvents() {
-        //TODO rewind 3600 indexes back from current time index
-        //TODO synchronize on all counting indexes or not?
-        //TODO synch on array itself or not?
-        synchronized (records) {
-            int counter = 0;
-            long currentTimeSeconds = getCurrentTimeInSeconds();
-            long currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
-            if (currentSecondIndex - SECONDS_IN_HOUR >= 0) {
-                for (int i = (int) currentSecondIndex; i > currentSecondIndex - SECONDS_IN_HOUR; i--) {
-                    synchronized (records[i]) {
-                        if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
-                            counter += records[i].getCount();
-                        }
+        int counter = 0;
+        long currentTimeSeconds = getCurrentTimeInSeconds();
+        long currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
+        if (currentSecondIndex - SECONDS_IN_HOUR >= 0) {
+            for (int i = (int) currentSecondIndex; i > currentSecondIndex - SECONDS_IN_HOUR; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
+                        counter += records[i].getCount();
                     }
                 }
-            } else {
-                long indexesToRewindFromEndOfArray = SECONDS_IN_HOUR - currentSecondIndex;
+            }
+        } else {
+            long indexesToRewindFromEndOfArray = SECONDS_IN_HOUR - currentSecondIndex;
 
-                for (int i = (int) currentSecondIndex; i >= 0; i--) {
-                    synchronized (records[i]) {
-                        if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
-                            counter += records[i].getCount();
-                        }
-                    }
-                }
-
-                for (int i = records.length - 1; i > records.length - 1 - indexesToRewindFromEndOfArray; i--) {
-                    synchronized (records[i]) {
-                        if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
-                            counter += records[i].getCount();
-                        }
+            for (int i = (int) currentSecondIndex; i >= 0; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
+                        counter += records[i].getCount();
                     }
                 }
             }
 
-            return counter;
+            for (int i = records.length - 1; i > records.length - 1 - indexesToRewindFromEndOfArray; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
+                        counter += records[i].getCount();
+                    }
+                }
+            }
         }
+
+        return counter;
     }
 
     /**
