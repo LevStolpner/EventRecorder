@@ -24,13 +24,13 @@ public class EventRecorder {
         }
     }
 
-    //TODO comment on what is going on inside this method
     /**
      * Records event time into records array.
      * If event time is past 24 hours or "in the future", it is not recorded.
-     * If otherwise, then
-     * 1) event time index is found in records array
-     * 2) needed element gets locked and number of records gets set
+     * If otherwise, few steps are performed:
+     * 1) corresponding event time index is found in records array
+     * 2) found element gets locked
+     * 3) number of records in element gets incremented or reset, depending on how much time has passed
      *
      * @param milliseconds event time
      */
@@ -55,6 +55,7 @@ public class EventRecorder {
         }
     }
 
+    //TODO refactor and comment
     /**
      * Gets number of events recorded in last minute (60 seconds)
      *
@@ -99,6 +100,7 @@ public class EventRecorder {
         }
     }
 
+    //TODO refactor and comment
     /**
      * Gets number of events recorded in last hour (60 minutes)
      *
@@ -145,24 +147,23 @@ public class EventRecorder {
     }
 
     /**
-     * Gets number of events recorded in last day (24 hours)
+     * Gets number of events recorded in last day (24 hours) by
+     * going through records array and counting elements records.
      *
      * @return number of events
      */
     public int getNumberOfLastDayEvents() {
-        synchronized (records) {
-            int counter = 0;
-            long currentTimeSeconds = getCurrentTimeInSeconds();
-            for (int i = 0; i < records.length; i++) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_DAY) {
-                        counter += records[i].getCount();
-                    }
+        int counter = 0;
+        long currentTimeSeconds = getCurrentTimeInSeconds();
+        for (int i = 0; i < records.length; i++) {
+            synchronized (records[i]) {
+                if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_DAY) {
+                    counter += records[i].getCount();
                 }
             }
-
-            return counter;
         }
+
+        return counter;
     }
 
     private long getCurrentTimeInSeconds() {
