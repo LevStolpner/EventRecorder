@@ -13,51 +13,42 @@ public class EventRecorder {
     private static final int SECONDS_IN_HOUR = 60 * SECONDS_IN_MINUTE;
     private static final int SECONDS_IN_DAY = 24 * SECONDS_IN_HOUR;
 
-    private final int startTimeSeconds;
+    private final int startTime;
+    //TODO explain data storage type and entities
     private final RecordEntity[] recordEntities = new RecordEntity[SECONDS_IN_DAY];
 
     public EventRecorder() {
-        this.startTimeSeconds = getCurrentTimeInSeconds();
+        this.startTime = getCurrentTimeInSeconds();
         for (int i = 0; i < recordEntities.length; i++) {
             recordEntities[i] = new RecordEntity();
         }
     }
 
+    //TODO comment on what is going on inside this method
     /**
-     * Record event
+     *
      *
      * @param milliseconds event time
      */
     public void recordEvent(long milliseconds) {
-        int currentTimeSeconds = getCurrentTimeInSeconds();
-        int eventSeconds = (int) milliseconds * 1000;
-        int difference = currentTimeSeconds - eventSeconds;
+        int currentTime = getCurrentTimeInSeconds();
+        int eventTime = (int) milliseconds * 1000;
+        int timeDifference = currentTime - eventTime;
 
-        //if event time is past 24 hours or "in the future", it is not recorded
-        if (difference > SECONDS_IN_DAY || difference < 0) {
+        if (timeDifference > SECONDS_IN_DAY || timeDifference < 0) {
             return;
         }
 
-        //index of current second in array
-        int currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % SECONDS_IN_DAY;
+        int currentTimeIndex = (currentTime - startTime) % SECONDS_IN_DAY;
+        int indexDifference = currentTimeIndex - timeDifference;
+        int eventTimeIndex = indexDifference >= 0 ? indexDifference : recordEntities.length + indexDifference;
 
-        int index;
-        //if we don't need to count from end of the array backwards to find index
-        if (currentSecondIndex - difference >= 0) {
-            //we must go "difference" number of indexes "back" in time
-            index = currentSecondIndex - difference;
-        } else {
-            //we must count from end of the array backwards to find index
-            index = recordEntities.length - 1 - difference + currentSecondIndex;
-        }
-
-        //number of records in second is either incremented or reset and started again
-        synchronized (recordEntities[index]) {
-            if (currentTimeSeconds - recordEntities[index].getLastTimeResetCount()> SECONDS_IN_DAY) {
-                recordEntities[index].setCount(1);
-                recordEntities[index].setLastTimeResetCount(currentTimeSeconds);
+        synchronized (recordEntities[eventTimeIndex]) {
+            if (currentTime - recordEntities[eventTimeIndex].getLastTimeResetCount() > SECONDS_IN_DAY) {
+                recordEntities[eventTimeIndex].setCount(1);
+                recordEntities[eventTimeIndex].setLastTimeResetCount(currentTime);
             } else {
-                recordEntities[index].incrementCount();
+                recordEntities[eventTimeIndex].incrementCount();
             }
         }
     }
@@ -73,7 +64,7 @@ public class EventRecorder {
         synchronized (recordEntities) {
             int counter = 0;
             int currentTimeSeconds = getCurrentTimeInSeconds();
-            int currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % SECONDS_IN_DAY;
+            int currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
             if (currentSecondIndex - SECONDS_IN_MINUTE >= 0) {
                 for (int i = currentSecondIndex; i > currentSecondIndex - SECONDS_IN_MINUTE; i--) {
                     synchronized (recordEntities[i]) {
@@ -118,7 +109,7 @@ public class EventRecorder {
         synchronized (recordEntities) {
             int counter = 0;
             int currentTimeSeconds = getCurrentTimeInSeconds();
-            int currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % SECONDS_IN_DAY;
+            int currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
             if (currentSecondIndex - SECONDS_IN_HOUR >= 0) {
                 for (int i = currentSecondIndex; i > currentSecondIndex - SECONDS_IN_HOUR; i--) {
                     synchronized (recordEntities[i]) {

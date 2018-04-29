@@ -18,7 +18,7 @@ class RecordEntity {
     }
 
     void incrementCount() {
-        this.count += 1;
+        this.count++;
     }
 
     long getLastTimeResetCount() {
