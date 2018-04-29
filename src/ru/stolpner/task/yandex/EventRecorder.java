@@ -55,18 +55,23 @@ public class EventRecorder {
         }
     }
 
-    //TODO refactor and comment
     /**
      * Gets number of events recorded in last minute (60 seconds)
+     *
+     * Few steps are performed:
+     * 1) current time index is determined
+     * 2) "previous" 60 records are counted to result
+     * 3) if not enough records contained before that index, elements are read from end of array
      *
      * @return number of events
      */
     public int getNumberOfLastMinuteEvents() {
         int counter = 0;
         long currentTimeSeconds = getCurrentTimeInSeconds();
-        long currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
-        if (currentSecondIndex - SECONDS_IN_MINUTE >= 0) {
-            for (int i = (int) currentSecondIndex; i > currentSecondIndex - SECONDS_IN_MINUTE; i--) {
+        long currentTimeIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
+
+        if (currentTimeIndex + 1 - SECONDS_IN_MINUTE >= 0) {
+            for (int i = (int) currentTimeIndex; i > currentTimeIndex - SECONDS_IN_MINUTE; i--) {
                 synchronized (records[i]) {
                     if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
                         counter += records[i].getCount();
@@ -74,9 +79,7 @@ public class EventRecorder {
                 }
             }
         } else {
-            long indexesToRewindFromEndOfArray = SECONDS_IN_MINUTE - currentSecondIndex;
-
-            for (int i = (int) currentSecondIndex; i >= 0; i--) {
+            for (int i = (int) currentTimeIndex; i >= 0; i--) {
                 synchronized (records[i]) {
                     if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
                         counter += records[i].getCount();
@@ -84,7 +87,7 @@ public class EventRecorder {
                 }
             }
 
-            for (int i = records.length - 1; i > records.length - 1 - indexesToRewindFromEndOfArray; i--) {
+            for (int i = records.length - 1; i >= records.length - SECONDS_IN_MINUTE + currentTimeIndex; i--) {
                 synchronized (records[i]) {
                     if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
                         counter += records[i].getCount();
