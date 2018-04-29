@@ -6,6 +6,15 @@ package ru.stolpner.task.yandex;
  * Events can be recorded asynchronously in any moment of time.
  * The load may be as high as 10 000 events in second, or only 2 events in hour.
  * Event recorder does not provide interface for event storage or detailed statistics on events.
+ *
+ * Records array structure has following logic rules:
+ * 1) it is filled with entities, one for each second of "last" 24 hours
+ * 2) each entity contains: counter for number of events happened in that second,
+ *                          time when counter was reset last time,
+ *                          to determine if counter was updated more than 24 hours ago
+ * 3) if less than 24 hours has passed, events with same-second time increment certain entities counter
+ * 4) if more than 24 hours has passed, old value in entities counter is reset
+ * 5) thus, records always contain full picture for events in last 24 hours
  */
 public class EventRecorder {
 
@@ -14,7 +23,6 @@ public class EventRecorder {
     private static final int SECONDS_IN_DAY = 24 * SECONDS_IN_HOUR;
 
     private final long startTime;
-    //TODO explain data storage type and entities
     private final RecordEntity[] records = new RecordEntity[SECONDS_IN_DAY];
 
     public EventRecorder() {
@@ -58,86 +66,19 @@ public class EventRecorder {
     /**
      * Gets number of events recorded in last minute (60 seconds)
      *
-     * Few steps are performed:
-     * 1) current time index is determined
-     * 2) "previous" 60 records are counted to result
-     * 3) if not enough records contained before that index, elements are read from end of array
-     *
      * @return number of events
      */
     public int getNumberOfLastMinuteEvents() {
-        int counter = 0;
-        long currentTimeSeconds = getCurrentTimeInSeconds();
-        long currentTimeIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
-
-        if (currentTimeIndex + 1 - SECONDS_IN_MINUTE >= 0) {
-            for (int i = (int) currentTimeIndex; i > currentTimeIndex - SECONDS_IN_MINUTE; i--) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
-                        counter += records[i].getCount();
-                    }
-                }
-            }
-        } else {
-            for (int i = (int) currentTimeIndex; i >= 0; i--) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
-                        counter += records[i].getCount();
-                    }
-                }
-            }
-
-            for (int i = records.length - 1; i >= records.length - SECONDS_IN_MINUTE + currentTimeIndex; i--) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
-                        counter += records[i].getCount();
-                    }
-                }
-            }
-        }
-
-        return counter;
+        return getNumberOfEventsByMinuteOrHour(true);
     }
 
-    //TODO refactor and comment
     /**
      * Gets number of events recorded in last hour (60 minutes)
      *
      * @return number of events
      */
     public int getNumberOfLastHourEvents() {
-        int counter = 0;
-        long currentTimeSeconds = getCurrentTimeInSeconds();
-        long currentSecondIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
-        if (currentSecondIndex - SECONDS_IN_HOUR >= 0) {
-            for (int i = (int) currentSecondIndex; i > currentSecondIndex - SECONDS_IN_HOUR; i--) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
-                        counter += records[i].getCount();
-                    }
-                }
-            }
-        } else {
-            long indexesToRewindFromEndOfArray = SECONDS_IN_HOUR - currentSecondIndex;
-
-            for (int i = (int) currentSecondIndex; i >= 0; i--) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
-                        counter += records[i].getCount();
-                    }
-                }
-            }
-
-            for (int i = records.length - 1; i > records.length - 1 - indexesToRewindFromEndOfArray; i--) {
-                synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
-                        counter += records[i].getCount();
-                    }
-                }
-            }
-        }
-
-        return counter;
+        return getNumberOfEventsByMinuteOrHour(false);
     }
 
     /**
@@ -162,5 +103,53 @@ public class EventRecorder {
 
     private long getCurrentTimeInSeconds() {
         return System.currentTimeMillis() * 1000;
+    }
+
+    /**
+     * Gets number of events based on time period.
+     * Few steps are performed:
+     * 1) current time index is determined
+     * 2) "previous" 60 or 3600 records are counted to result
+     * 3) if not enough record elements are contained before current index,
+     *    then elements are read from end of array
+     *
+     * @param isByMinute time period,
+     *                   if true - events are counted for last minute (60 seconds),
+     *                   if false - events are counted for last hour (60 minutes)
+     * @return number of events
+     */
+    private int getNumberOfEventsByMinuteOrHour(boolean isByMinute) {
+        int counter = 0;
+        long currentTimeSeconds = getCurrentTimeInSeconds();
+        long currentTimeIndex = (currentTimeSeconds - startTime) % SECONDS_IN_DAY;
+        int timePeriod = isByMinute ? SECONDS_IN_MINUTE : SECONDS_IN_HOUR;
+
+        if (currentTimeIndex + 1 - timePeriod >= 0) {
+            for (int i = (int) currentTimeIndex; i > currentTimeIndex - timePeriod; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < timePeriod) {
+                        counter += records[i].getCount();
+                    }
+                }
+            }
+        } else {
+            for (int i = (int) currentTimeIndex; i >= 0; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < timePeriod) {
+                        counter += records[i].getCount();
+                    }
+                }
+            }
+
+            for (int i = records.length - 1; i > records.length + currentTimeIndex - timePeriod; i--) {
+                synchronized (records[i]) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < timePeriod) {
+                        counter += records[i].getCount();
+                    }
+                }
+            }
+        }
+
+        return counter;
     }
 }
