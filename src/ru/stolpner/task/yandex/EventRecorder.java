@@ -44,7 +44,7 @@ public class EventRecorder {
      */
     public void recordEvent(long milliseconds) {
         long currentTime = getCurrentTimeInSeconds();
-        long eventTime = milliseconds * 1000;
+        long eventTime = milliseconds / 1000;
         long timeDifference = currentTime - eventTime;
 
         if (timeDifference > SECONDS_IN_DAY || timeDifference < 0) return;
@@ -102,7 +102,7 @@ public class EventRecorder {
     }
 
     private long getCurrentTimeInSeconds() {
-        return System.currentTimeMillis() * 1000;
+        return System.currentTimeMillis() / 1000;
     }
 
     /**
