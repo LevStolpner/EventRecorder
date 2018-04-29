@@ -1,6 +1,5 @@
 package ru.stolpner.task.yandex;
 
-//synchronize methods in this class instead of in code of recorder
 class RecordEntity {
     private int count;
     private long lastTimeResetCount;
@@ -22,11 +21,11 @@ class RecordEntity {
         this.count += 1;
     }
 
-    public long getLastTimeResetCount() {
+    long getLastTimeResetCount() {
         return lastTimeResetCount;
     }
 
-    public void setLastTimeResetCount(long lastTimeResetCount) {
+    void setLastTimeResetCount(long lastTimeResetCount) {
         this.lastTimeResetCount = lastTimeResetCount;
     }
 }

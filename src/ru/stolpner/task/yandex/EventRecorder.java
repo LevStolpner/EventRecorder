@@ -9,19 +9,15 @@ package ru.stolpner.task.yandex;
  */
 public class EventRecorder {
 
-    private static final int NUMBER_OF_SECONDS_IN_MINUTE = 60;
-    private static final int NUMBER_OF_SECONDS_IN_HOUR = 60 * NUMBER_OF_SECONDS_IN_MINUTE;
-    private static final int NUMBER_OF_SECONDS_IN_DAY = 24 * NUMBER_OF_SECONDS_IN_HOUR;
+    private static final int SECONDS_IN_MINUTE = 60;
+    private static final int SECONDS_IN_HOUR = 60 * SECONDS_IN_MINUTE;
+    private static final int SECONDS_IN_DAY = 24 * SECONDS_IN_HOUR;
 
-    private final RecordEntity[] recordEntities = new RecordEntity[NUMBER_OF_SECONDS_IN_DAY];
-    //only reads from here?
-    private final long startTimeSeconds;
+    private final int startTimeSeconds;
+    private final RecordEntity[] recordEntities = new RecordEntity[SECONDS_IN_DAY];
 
-    //TODO lazy initialization of entities
-    //TODO longs to ints?
-    //check synchronization
     public EventRecorder() {
-        this.startTimeSeconds = System.currentTimeMillis() * 1000;
+        this.startTimeSeconds = getCurrentTimeInSeconds();
         for (int i = 0; i < recordEntities.length; i++) {
             recordEntities[i] = new RecordEntity();
         }
@@ -33,31 +29,31 @@ public class EventRecorder {
      * @param milliseconds event time
      */
     public void recordEvent(long milliseconds) {
-        long currentTimeSeconds = System.currentTimeMillis() * 1000;
-        long eventSeconds = milliseconds * 1000;
-        long difference = currentTimeSeconds - eventSeconds;
+        int currentTimeSeconds = getCurrentTimeInSeconds();
+        int eventSeconds = (int) milliseconds * 1000;
+        int difference = currentTimeSeconds - eventSeconds;
 
         //if event time is past 24 hours or "in the future", it is not recorded
-        if (difference > NUMBER_OF_SECONDS_IN_DAY || difference < 0) {
+        if (difference > SECONDS_IN_DAY || difference < 0) {
             return;
         }
 
         //index of current second in array
-        long currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % NUMBER_OF_SECONDS_IN_DAY;
+        int currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % SECONDS_IN_DAY;
 
         int index;
         //if we don't need to count from end of the array backwards to find index
         if (currentSecondIndex - difference >= 0) {
             //we must go "difference" number of indexes "back" in time
-            index = (int) (currentSecondIndex - difference);
+            index = currentSecondIndex - difference;
         } else {
             //we must count from end of the array backwards to find index
-            index = recordEntities.length - 1 - (int) (difference - currentSecondIndex);
+            index = recordEntities.length - 1 - difference + currentSecondIndex;
         }
 
         //number of records in second is either incremented or reset and started again
         synchronized (recordEntities[index]) {
-            if (currentTimeSeconds - recordEntities[index].getLastTimeResetCount()> NUMBER_OF_SECONDS_IN_DAY) {
+            if (currentTimeSeconds - recordEntities[index].getLastTimeResetCount()> SECONDS_IN_DAY) {
                 recordEntities[index].setCount(1);
                 recordEntities[index].setLastTimeResetCount(currentTimeSeconds);
             } else {
@@ -76,22 +72,22 @@ public class EventRecorder {
         //TODO synchronize on all counting indexes or not?
         synchronized (recordEntities) {
             int counter = 0;
-            long currentTimeSeconds = System.currentTimeMillis() * 1000;
-            long currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % NUMBER_OF_SECONDS_IN_DAY;
-            if (currentSecondIndex - NUMBER_OF_SECONDS_IN_MINUTE >= 0) {
-                for (int i = (int) currentSecondIndex; i > currentSecondIndex - NUMBER_OF_SECONDS_IN_MINUTE; i--) {
+            int currentTimeSeconds = getCurrentTimeInSeconds();
+            int currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % SECONDS_IN_DAY;
+            if (currentSecondIndex - SECONDS_IN_MINUTE >= 0) {
+                for (int i = currentSecondIndex; i > currentSecondIndex - SECONDS_IN_MINUTE; i--) {
                     synchronized (recordEntities[i]) {
-                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_MINUTE) {
+                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
                             counter += recordEntities[i].getCount();
                         }
                     }
                 }
             } else {
-                int indexesToRewindFromEndOfArray = (int) (NUMBER_OF_SECONDS_IN_MINUTE - currentSecondIndex);
+                int indexesToRewindFromEndOfArray = SECONDS_IN_MINUTE - currentSecondIndex;
 
-                for (int i = (int) currentSecondIndex; i >= 0; i--) {
+                for (int i = currentSecondIndex; i >= 0; i--) {
                     synchronized (recordEntities[i]) {
-                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_MINUTE) {
+                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
                             counter += recordEntities[i].getCount();
                         }
                     }
@@ -99,7 +95,7 @@ public class EventRecorder {
 
                 for (int i = recordEntities.length - 1; i > recordEntities.length - 1 - indexesToRewindFromEndOfArray; i--) {
                     synchronized (recordEntities[i]) {
-                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_MINUTE) {
+                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_MINUTE) {
                             counter += recordEntities[i].getCount();
                         }
                     }
@@ -121,22 +117,22 @@ public class EventRecorder {
         //TODO synch on array itself or not?
         synchronized (recordEntities) {
             int counter = 0;
-            long currentTimeSeconds = System.currentTimeMillis() * 1000;
-            long currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % NUMBER_OF_SECONDS_IN_DAY;
-            if (currentSecondIndex - NUMBER_OF_SECONDS_IN_HOUR >= 0) {
-                for (int i = (int) currentSecondIndex; i > currentSecondIndex - NUMBER_OF_SECONDS_IN_HOUR; i--) {
+            int currentTimeSeconds = getCurrentTimeInSeconds();
+            int currentSecondIndex = (currentTimeSeconds - startTimeSeconds) % SECONDS_IN_DAY;
+            if (currentSecondIndex - SECONDS_IN_HOUR >= 0) {
+                for (int i = currentSecondIndex; i > currentSecondIndex - SECONDS_IN_HOUR; i--) {
                     synchronized (recordEntities[i]) {
-                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_HOUR) {
+                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
                             counter += recordEntities[i].getCount();
                         }
                     }
                 }
             } else {
-                int indexesToRewindFromEndOfArray = (int) (NUMBER_OF_SECONDS_IN_HOUR - currentSecondIndex);
+                int indexesToRewindFromEndOfArray = SECONDS_IN_HOUR - currentSecondIndex;
 
-                for (int i = (int) currentSecondIndex; i >= 0; i--) {
+                for (int i = currentSecondIndex; i >= 0; i--) {
                     synchronized (recordEntities[i]) {
-                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_HOUR) {
+                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
                             counter += recordEntities[i].getCount();
                         }
                     }
@@ -144,7 +140,7 @@ public class EventRecorder {
 
                 for (int i = recordEntities.length - 1; i > recordEntities.length - 1 - indexesToRewindFromEndOfArray; i--) {
                     synchronized (recordEntities[i]) {
-                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_HOUR) {
+                        if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_HOUR) {
                             counter += recordEntities[i].getCount();
                         }
                     }
@@ -163,10 +159,10 @@ public class EventRecorder {
     public int getNumberOfLastDayEvents() {
         synchronized (recordEntities) {
             int counter = 0;
-            long currentTimeSeconds = System.currentTimeMillis() * 1000;
+            int currentTimeSeconds = getCurrentTimeInSeconds();
             for (int i = 0; i < recordEntities.length; i++) {
                 synchronized (recordEntities[i]) {
-                    if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < NUMBER_OF_SECONDS_IN_DAY) {
+                    if (currentTimeSeconds - recordEntities[i].getLastTimeResetCount() < SECONDS_IN_DAY) {
                         counter += recordEntities[i].getCount();
                     }
                 }
@@ -174,5 +170,9 @@ public class EventRecorder {
 
             return counter;
         }
+    }
+
+    private int getCurrentTimeInSeconds() {
+        return (int) System.currentTimeMillis() * 1000;
     }
 }
