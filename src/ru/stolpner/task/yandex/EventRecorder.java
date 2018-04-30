@@ -28,7 +28,7 @@ public class EventRecorder {
     public EventRecorder() {
         this.startTime = getCurrentTimeInSeconds();
         for (int i = 0; i < records.length; i++) {
-            records[i] = new RecordEntity();
+            records[i] = new RecordEntity(this.startTime - records.length + i);
         }
     }
 
@@ -47,7 +47,7 @@ public class EventRecorder {
         long eventTime = milliseconds / 1000;
         long timeDifference = currentTime - eventTime;
 
-        if (timeDifference > SECONDS_IN_DAY || timeDifference < 0) return;
+        if (timeDifference >= SECONDS_IN_DAY || timeDifference < 0) return;
 
         long currentTimeIndex = (currentTime - startTime) % SECONDS_IN_DAY;
         long indexDifference = currentTimeIndex - timeDifference;
@@ -127,7 +127,7 @@ public class EventRecorder {
         if (currentTimeIndex + 1 - timePeriod >= 0) {
             for (int i = (int) currentTimeIndex; i > currentTimeIndex - timePeriod; i--) {
                 synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < timePeriod) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_DAY) {
                         counter += records[i].getCount();
                     }
                 }
@@ -135,7 +135,7 @@ public class EventRecorder {
         } else {
             for (int i = (int) currentTimeIndex; i >= 0; i--) {
                 synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < timePeriod) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_DAY) {
                         counter += records[i].getCount();
                     }
                 }
@@ -143,7 +143,7 @@ public class EventRecorder {
 
             for (int i = records.length - 1; i > records.length + currentTimeIndex - timePeriod; i--) {
                 synchronized (records[i]) {
-                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < timePeriod) {
+                    if (currentTimeSeconds - records[i].getLastTimeResetCount() < SECONDS_IN_DAY) {
                         counter += records[i].getCount();
                     }
                 }

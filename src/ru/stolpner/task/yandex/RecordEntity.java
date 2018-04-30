@@ -4,9 +4,9 @@ class RecordEntity {
     private int count;
     private long lastTimeResetCount;
 
-    RecordEntity() {
+    RecordEntity(long time) {
         this.count = 0;
-        this.lastTimeResetCount = System.currentTimeMillis() * 1000;
+        this.lastTimeResetCount = time;
     }
 
     int getCount() {

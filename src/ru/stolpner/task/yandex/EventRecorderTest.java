@@ -1,26 +1,34 @@
 package ru.stolpner.task.yandex;
 
+import java.util.concurrent.TimeUnit;
+
 public class EventRecorderTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         EventRecorder recorder = new EventRecorder();
-        System.out.println("Empty recorder get last minute stats: " + recorder.getNumberOfLastMinuteEvents());
-        System.out.println("Empty recorder get last hour stats: " + recorder.getNumberOfLastHourEvents());
-        System.out.println("Empty recorder get last day stats: " + recorder.getNumberOfLastDayEvents());
 
-        recorder.recordEvent(System.currentTimeMillis());
-        recorder.recordEvent(System.currentTimeMillis());
-        recorder.recordEvent(System.currentTimeMillis());
-
-        System.out.println("3 records last minute stats: " + recorder.getNumberOfLastMinuteEvents());
-        System.out.println("3 records last hour stats: " + recorder.getNumberOfLastHourEvents());
-        System.out.println("3 records last day stats: " + recorder.getNumberOfLastDayEvents());
-
-        recorder.recordEvent(System.currentTimeMillis() - 50 * 1000);
+        recorder.recordEvent(System.currentTimeMillis() - 57 * 1000);
         recorder.recordEvent(System.currentTimeMillis() - 50 * 60 * 1000);
         recorder.recordEvent(System.currentTimeMillis() - 20 * 60 * 60 * 1000);
 
-        System.out.println("4 records last minute stats: " + recorder.getNumberOfLastMinuteEvents());
-        System.out.println("5 records last hour stats: " + recorder.getNumberOfLastHourEvents());
-        System.out.println("6 records last day stats: " + recorder.getNumberOfLastDayEvents());
+        System.out.println("records last minute stats: " + recorder.getNumberOfLastMinuteEvents());
+        System.out.println("records last hour stats: " + recorder.getNumberOfLastHourEvents());
+        System.out.println("records last day stats: " + recorder.getNumberOfLastDayEvents());
+
+        TimeUnit.SECONDS.sleep(5);
+        System.out.println("After 5 seconds sleep last minute stats: " + recorder.getNumberOfLastMinuteEvents());
+        System.out.println("After 5 seconds sleep last hour stats: " + recorder.getNumberOfLastHourEvents());
+        System.out.println("After 5 seconds sleep last day stats: " + recorder.getNumberOfLastDayEvents());
+
+        recorder.recordEvent(System.currentTimeMillis() - 86398000);
+
+        System.out.println("After 1 day expired last minute stats: " + recorder.getNumberOfLastMinuteEvents());
+        System.out.println("After 1 day expired last hour stats: " + recorder.getNumberOfLastHourEvents());
+        System.out.println("After 1 day expired last day stats: " + recorder.getNumberOfLastDayEvents());
+
+
+        TimeUnit.SECONDS.sleep(5);
+        System.out.println("After 5 seconds sleep last minute stats: " + recorder.getNumberOfLastMinuteEvents());
+        System.out.println("After 5 seconds sleep last hour stats: " + recorder.getNumberOfLastHourEvents());
+        System.out.println("After 5 seconds sleep last day stats: " + recorder.getNumberOfLastDayEvents());
     }
 }
