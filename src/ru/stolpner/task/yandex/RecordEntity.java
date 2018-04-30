@@ -2,11 +2,11 @@ package ru.stolpner.task.yandex;
 
 class RecordEntity {
     private volatile int count;
-    private volatile long lastTimeResetCount;
+    private volatile long lastTimeReset;
 
     RecordEntity(long time) {
         this.count = 0;
-        this.lastTimeResetCount = time;
+        this.lastTimeReset = time;
     }
 
     int getCount() {
@@ -21,11 +21,11 @@ class RecordEntity {
         this.count++;
     }
 
-    long getLastTimeResetCount() {
-        return lastTimeResetCount;
+    long getLastTimeReset() {
+        return lastTimeReset;
     }
 
-    void setLastTimeResetCount(long lastTimeResetCount) {
-        this.lastTimeResetCount = lastTimeResetCount;
+    void setLastTimeReset(long lastTimeReset) {
+        this.lastTimeReset = lastTimeReset;
     }
 }
