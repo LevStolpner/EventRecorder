@@ -1,8 +1,8 @@
 package ru.stolpner.task.yandex;
 
 class RecordEntity {
-    private int count;
-    private long lastTimeResetCount;
+    private volatile int count;
+    private volatile long lastTimeResetCount;
 
     RecordEntity(long time) {
         this.count = 0;
